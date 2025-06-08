@@ -7,7 +7,8 @@
       "pdf_to_csv": "test_outputs/pdf_to_csv_Itau_2024-10.csv",
       "text_to_csv": "test_outputs/text_to_csv_Itau_2024-10.csv"
     },
-    "success": true
+    "success": true,
+    "comparisons": {}
   },
   "Itau_2025-05.pdf": {
     "pdf_path": "Itau_2025-05.pdf",
@@ -17,6 +18,7 @@
       "pdf_to_csv": "test_outputs/pdf_to_csv_Itau_2025-05.csv",
       "text_to_csv": "test_outputs/text_to_csv_Itau_2025-05.csv"
     },
-    "success": true
+    "success": true,
+    "comparisons": {}
   }
 }

@@ -218,7 +218,10 @@ def parse_fx_chunk(chunk: list[str]):
     if not rate_line:
         return None
 
-    fx_rate = Decimal(RE_DOLAR.search(rate_line).group(1).replace(',', '.'))
+    dolar_match = RE_DOLAR.search(rate_line)
+    if not dolar_match:
+        return None
+    fx_rate = Decimal(dolar_match.group(1).replace(',', '.'))
     return {
         "date":       main.group('date'),
         "descr":      main.group('descr'),
@@ -256,6 +259,7 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
 
         # FX bloco: aceita 2 ou 3 linhas
         fx_res = None
+        consumed = 1  # Initialize consumed
         if i + 2 < len(lines):
             fx_res = parse_fx_chunk([line, clean(lines[i+1]), clean(lines[i+2])])
             consumed = 3
@@ -383,6 +387,8 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("files", nargs="+"); ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(message)s")
     total = Counter(); t0 = time.perf_counter()
+    rows = []  # Initialize rows outside the loop
+    csv_metrics = {}  # Initialize csv_metrics outside the loop
     for f in a.files:
         p = Path(f); m = re.search(r"(20\d{2})(\d{2})", p.stem); ry, rm = (int(m.group(1)), int(m.group(2))) if m else (datetime.now().year, datetime.now().month)
         log_block("START", v=__version__, file=p.name, sha=hashlib.sha1(p.read_bytes()).hexdigest()[:8])

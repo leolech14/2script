@@ -59,7 +59,7 @@ def iter_pdf_lines(pdf_path: Path) -> Iterator[str]:
                     yield line
 
 
-def parse_statement_line(line: str) -> dict:
+def parse_statement_line(line: str) -> dict | None:
     """Parse a single statement line using basic patterns."""
     # Basic patterns
     date_pattern = r'(\d{2}/\d{2})'
@@ -67,7 +67,7 @@ def parse_statement_line(line: str) -> dict:
     card_pattern = r'final (\d{4})'
     
     # Try to match a transaction line
-    transaction = re.match(f'{date_pattern}\s+(.+?)\s+{amount_pattern}$', line)
+    transaction = re.match(f'{date_pattern}\\s+(.+?)\\s+{amount_pattern}$', line)
     if transaction:
         date, description, amount = transaction.groups()
         amount = Decimal(amount.replace('.', '').replace(',', '.'))
@@ -93,9 +93,18 @@ def parse_statement_line(line: str) -> dict:
         hash_input = f"{card_last4}|{date}|{description}|{amount}"
         ledger_hash = hashlib.sha1(hash_input.encode()).hexdigest()
         
+        # Convert DD/MM to YYYY-MM-DD format (assuming current year)
+        if '/' in date and len(date.split('/')) == 2:
+            day, month = date.split('/')
+            from datetime import datetime
+            current_year = datetime.now().year
+            normalized_date = f"{current_year}-{int(month):02d}-{int(day):02d}"
+        else:
+            normalized_date = date
+        
         return {
             'card_last4': card_last4,
-            'post_date': date,
+            'post_date': normalized_date,
             'desc_raw': description,
             'amount_brl': str(amount),
             'installment_seq': '',
