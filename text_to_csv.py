@@ -1,14 +1,15 @@
 import re
 from decimal import Decimal
+from typing import Optional
 
-def parse_statement_line(line: str) -> dict:
+def parse_statement_line(line: str) -> Optional[dict]:
     # Basic patterns
     date_pattern = r'(\d{2}/\d{2})'
     amount_pattern = r'([\d.,]+)'
     card_pattern = r'final (\d{4})'
     
     # Try to match a transaction line
-    transaction = re.match(f'{date_pattern}\s+(.+?)\s+{amount_pattern}$', line)
+    transaction = re.match(f'{date_pattern}\\s+(.+?)\\s+{amount_pattern}$', line)
     if transaction:
         date, description, amount = transaction.groups()
         amount = Decimal(amount.replace('.', '').replace(',', '.'))

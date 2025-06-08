@@ -16,7 +16,10 @@ from pathlib import Path
 from typing import Iterator, List
 
 import pdfplumber                               # pip install pdfplumber
-import text_to_csv as t2c                # existing legacy parser
+from pathlib import Path as PathLib
+import re
+from decimal import Decimal
+import hashlib
 
 CSV_HEADER = [
     "card_last4",
@@ -56,12 +59,68 @@ def iter_pdf_lines(pdf_path: Path) -> Iterator[str]:
                     yield line
 
 
+def parse_statement_line(line: str) -> dict:
+    """Parse a single statement line using basic patterns."""
+    # Basic patterns
+    date_pattern = r'(\d{2}/\d{2})'
+    amount_pattern = r'([\d.,]+)'
+    card_pattern = r'final (\d{4})'
+    
+    # Try to match a transaction line
+    transaction = re.match(f'{date_pattern}\s+(.+?)\s+{amount_pattern}$', line)
+    if transaction:
+        date, description, amount = transaction.groups()
+        amount = Decimal(amount.replace('.', '').replace(',', '.'))
+        
+        # Try to find card number
+        card_match = re.search(card_pattern, description)
+        card_last4 = card_match.group(1) if card_match else '0000'
+        
+        # Simple categorization
+        desc_upper = description.upper()
+        if 'PAGAMENTO' in desc_upper:
+            category = 'PAGAMENTO'
+        elif 'IOF' in desc_upper:
+            category = 'IOF'
+        elif any(x in desc_upper for x in ['RESTAUR', 'LANCHE', 'CAFE']):
+            category = 'RESTAURANTE'
+        elif any(x in desc_upper for x in ['SUPERMERC', 'MERCADO']):
+            category = 'SUPERMERCADO'
+        else:
+            category = 'DIVERSOS'
+        
+        # Generate simple hash
+        hash_input = f"{card_last4}|{date}|{description}|{amount}"
+        ledger_hash = hashlib.sha1(hash_input.encode()).hexdigest()
+        
+        return {
+            'card_last4': card_last4,
+            'post_date': date,
+            'desc_raw': description,
+            'amount_brl': str(amount),
+            'installment_seq': '',
+            'installment_tot': '',
+            'fx_rate': '',
+            'iof_brl': '',
+            'category': category,
+            'merchant_city': '',
+            'ledger_hash': ledger_hash,
+            'prev_bill_amount': '',
+            'interest_amount': '',
+            'amount_orig': '',
+            'currency_orig': '',
+            'amount_usd': '',
+        }
+    
+    return None
+
+
 def parse_lines(lines: Iterator[str]) -> List[dict]:
-    """Convert raw lines into row-dicts via the legacy parser."""
+    """Convert raw lines into row-dicts via the basic parser."""
     rows: List[dict] = []
     for line in lines:
         try:
-            row = t2c.parse_statement_line(line)  # expected helper in text_to_csv
+            row = parse_statement_line(line)
             if row:
                 rows.append(row)
         except Exception as exc:                 # pragma: no cover
