@@ -24,8 +24,8 @@
   
   "ruff.runOnSave": "all",
   "editor.codeActionsOnSave": {
-    "source.fixAll.ruff": true,
-    "source.organizeImports": true
+    "source.fixAll.ruff": "explicit",
+    "source.organizeImports": "explicit"
   },
   "python.defaultInterpreterPath": "./venv/bin/python",
   "python.testing.pytestEnabled": true,
@@ -48,5 +48,9 @@
     "**/__pycache__/**": true,
     "**/htmlcov/**": true,
     "**/.pytest_cache/**": true
-  }
+  },
+  "cSpell.words": [
+    "FARMAC",
+    "Itaú"
+  ]
 }

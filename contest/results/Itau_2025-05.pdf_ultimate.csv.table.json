@@ -43,7 +43,7 @@
       "resizable": true,
       "sorter": "number",
       "headerSort": true,
-      "width": 131
+      "width": 132
     },
     {
       "field": "installment_seq",
