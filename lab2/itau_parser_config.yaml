@@ -1,0 +1,107 @@
+business_rules:
+  adjustment_threshold: 0.3
+  fx_currencies:
+  - USD
+  - EUR
+  - GBP
+  - CHF
+  ignore_first_payment: true
+  interest_keywords:
+  - JUROS
+  - MULTA
+  iof_keywords:
+  - IOF
+  - REPASSE
+  payment_markers:
+  - '7117'
+categories:
+  DIVERSOS: []
+  EDUCAÇÃO:
+  - EDU
+  - ESCOLA
+  - UNIVERS
+  FARMÁCIA:
+  - FARMAC
+  - DROG
+  - PANVEL
+  PAGAMENTO:
+  - '7117'
+  - PAGAMENTO
+  POSTO:
+  - POSTO
+  - COMBUST
+  - GASOLIN
+  RESTAURANTE:
+  - RESTAUR
+  - PIZZ
+  - BAR
+  - CAFÉ
+  - LANCHE
+  SAÚDE:
+  - SAUD
+  - MEDIC
+  - HOSPITAL
+  SERVIÇOS:
+  - ANUIDADE
+  - TARIFA
+  - SEGURO
+  - PRODUTO
+  SUPERMERCADO:
+  - SUPERMERC
+  - MERCADO
+  TRANSPORTE:
+  - UBER
+  - TAXI
+  - TRANSP
+  - PASSAGEM
+  TURISMO:
+  - HOTEL
+  - AEROPORTO
+  - ENTRETENIM
+  VESTUÁRIO:
+  - VEST
+  - LOJA
+  - MAGAZINE
+parsing:
+  amount_tolerance: 0.01
+  card_patterns:
+  - final (\d{4})
+  - cart[ãa]o.*?(\d{4})
+  - (\d{4})\s*$
+  date_formats:
+  - '%d/%m/%Y'
+  - '%d/%m'
+  - '%Y-%m-%d'
+  default_year: 2025
+schema:
+  delimiter: ;
+  encoding: utf-8
+  fields:
+  - card_last4
+  - post_date
+  - desc_raw
+  - amount_brl
+  - installment_seq
+  - installment_tot
+  - fx_rate
+  - iof_brl
+  - category
+  - merchant_city
+  - ledger_hash
+  - prev_bill_amount
+  - interest_amount
+  - amount_orig
+  - currency_orig
+  - amount_usd
+validation:
+  amount_range:
+    max: 50000.0
+    min: -50000.0
+  date_range:
+    end: '2030-12-31'
+    start: '2020-01-01'
+  required_fields:
+  - card_last4
+  - post_date
+  - desc_raw
+  - amount_brl
