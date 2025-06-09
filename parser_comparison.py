@@ -10,53 +10,49 @@ from pathlib import Path
 from collections import defaultdict
 from typing import Dict, List
 import json
+import parser_utils  # NEW: for shared utilities
 
 def load_csv_data(file_path: Path) -> List[Dict]:
     """Load CSV data and normalize column names."""
-    rows = []
     if not file_path.exists():
         print(f"Warning: File not found: {file_path}")
-        return rows
-    
-    with open(file_path, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            # Normalize column names (different scripts use different names)
-            normalized_row = {}
-            for key, value in row.items():
-                # Map common field variations
-                key_lower = key.lower()
-                if key_lower in ['amount_brl', 'valor_brl']:
-                    normalized_row['amount'] = value
-                elif key_lower in ['desc_raw', 'description']:
-                    normalized_row['description'] = value
-                elif key_lower in ['post_date', 'date']:
-                    normalized_row['date'] = value
-                elif key_lower in ['card_last4']:
-                    normalized_row['card'] = value
-                elif key_lower in ['category', 'categoria_high']:
-                    normalized_row['category'] = value
-                else:
-                    normalized_row[key] = value
-            rows.append(normalized_row)
-    
-    return rows
+        return []
+    # Use shared utility for loading
+    rows = parser_utils.load_csv(file_path, delimiter=";" if file_path.suffix == ".csv" else ",")
+    # Normalize column names as before
+    normalized = []
+    for row in rows:
+        normalized_row = {}
+        for key, value in row.items():
+            key_lower = key.lower()
+            if key_lower in ['amount_brl', 'valor_brl']:
+                normalized_row['amount'] = value
+            elif key_lower in ['desc_raw', 'description']:
+                normalized_row['description'] = value
+            elif key_lower in ['post_date', 'date']:
+                normalized_row['date'] = value
+            elif key_lower in ['card_last4']:
+                normalized_row['card'] = value
+            elif key_lower in ['category', 'categoria_high']:
+                normalized_row['category'] = value
+            else:
+                normalized_row[key] = value
+        normalized.append(normalized_row)
+    return normalized
 
 def create_transaction_key(row: Dict) -> str:
     """Create a unique key for matching transactions across parsers."""
     date = row.get('date', '').strip()
     desc = row.get('description', '').strip()
     amount = row.get('amount', '').strip()
-    
-    # Clean amount for comparison
+    # Use shared decomma utility for normalization
     if amount:
         try:
-            amount_clean = str(float(amount.replace(',', '.')))
-        except ValueError:
+            amount_clean = str(float(parser_utils.decomma(amount)))
+        except Exception:
             amount_clean = amount
     else:
         amount_clean = '0'
-    
     return f"{date}|{desc}|{amount_clean}"
 
 def analyze_parsers(codex_file: Path, pdf_csv_file: Path, text_csv_file: Path) -> Dict:
@@ -135,7 +131,7 @@ def analyze_parsers(codex_file: Path, pdf_csv_file: Path, text_csv_file: Path) -
     for parser_name, data in [("codex", codex_data), ("pdf_to_csv", pdf_csv_data), ("text_to_csv", text_csv_data)]:
         for row in data:
             for field, value in row.items():
-                if value and value.strip():  # Non-empty field
+                if value and str(value).strip():  # Non-empty field
                     analysis["field_analysis"][field][parser_name] += 1
     
     return analysis
@@ -194,15 +190,11 @@ def print_analysis_report(analysis: Dict):
     print(f"\n💡 RECOMMENDATIONS:")
     best_coverage = max(parsers.values())
     best_parser = [name for name, count in parsers.items() if count == best_coverage][0]
-    
     print(f"  • {best_parser.upper()} has the highest coverage ({best_coverage} transactions)")
-    
     if coverage['all_three'] / total < 0.5:
         print(f"  • Low overlap between parsers ({coverage['all_three']/total*100:.1f}%) - consider investigating parsing differences")
-    
     if coverage['codex_only'] > 0:
         print(f"  • Codex finds {coverage['codex_only']} unique transactions - may have more sophisticated parsing")
-    
     if parsers['pdf_to_csv'] == parsers['text_to_csv']:
         print(f"  • PDF-to-CSV and Text-to-CSV have identical coverage - PDF extraction may be working correctly")
 

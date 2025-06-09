@@ -1,0 +1,14 @@
+# Ultimate Itaú Parser Dependencies
+pdfplumber>=0.9.0
+PyYAML>=6.0
+python-dateutil>=2.8.0
+
+# Optional but recommended
+pandas>=1.5.0  # For advanced data analysis
+numpy>=1.21.0  # For numerical operations
+
+# Development dependencies (optional)
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=0.990

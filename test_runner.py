@@ -19,28 +19,24 @@ logger = logging.getLogger(__name__)
 
 class CSVComparator:
     """Utility to compare CSV files and report differences."""
-    
     def __init__(self):
         self.tolerance = 0.01  # For numerical comparisons
-    
+
     def load_csv(self, path: Path) -> List[Dict]:
-        """Load CSV file into list of dictionaries."""
-        rows = []
-        with open(path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                rows.append(row)
-        return rows
-    
+        """Load CSV file into list of dictionaries using shared utility."""
+        # Use parser_utils for delimiter detection and loading
+        from . import parser_utils
+        delimiter = ";" if path.suffix == ".csv" else ","
+        return parser_utils.load_csv(path, delimiter=delimiter)
     def compare_numeric(self, val1: str, val2: str) -> bool:
-        """Compare numeric values with tolerance."""
+        """Compare numeric values with tolerance using shared decomma."""
         try:
-            num1 = float(val1.replace(',', '.')) if val1 else 0.0
-            num2 = float(val2.replace(',', '.')) if val2 else 0.0
+            from . import parser_utils
+            num1 = float(parser_utils.decomma(val1)) if val1 else 0.0
+            num2 = float(parser_utils.decomma(val2)) if val2 else 0.0
             return abs(num1 - num2) <= self.tolerance
-        except ValueError:
+        except Exception:
             return val1 == val2
-    
     def compare_csvs(self, actual_path: Path, golden_path: Path) -> Dict:
         """
         Compare actual CSV output with golden CSV.
@@ -48,13 +44,10 @@ class CSVComparator:
         """
         if not actual_path.exists():
             return {"error": f"Actual file not found: {actual_path}"}
-        
         if not golden_path.exists():
             return {"error": f"Golden file not found: {golden_path}"}
-        
         actual_rows = self.load_csv(actual_path)
         golden_rows = self.load_csv(golden_path)
-        
         result = {
             "actual_count": len(actual_rows),
             "golden_count": len(golden_rows),
@@ -64,15 +57,12 @@ class CSVComparator:
             "extra_in_actual": [],
             "field_differences": {}
         }
-        
         # Compare row counts
         if len(actual_rows) != len(golden_rows):
             logger.warning(f"Row count mismatch: actual={len(actual_rows)}, golden={len(golden_rows)}")
-        
         # Create lookup dictionaries for comparison
         actual_dict = {self._row_key(row): row for row in actual_rows}
         golden_dict = {self._row_key(row): row for row in golden_rows}
-        
         # Find matches and differences
         for key, golden_row in golden_dict.items():
             if key in actual_dict:
@@ -88,14 +78,12 @@ class CSVComparator:
                     })
             else:
                 result["missing_from_actual"].append(golden_row)
-        
         # Find extra rows in actual
         for key, actual_row in actual_dict.items():
             if key not in golden_dict:
                 result["extra_in_actual"].append(actual_row)
-        
         return result
-    
+
     def _row_key(self, row: Dict) -> str:
         """Generate a unique key for a row (used for matching)."""
         # Use a combination of fields that should uniquely identify a transaction
@@ -105,7 +93,7 @@ class CSVComparator:
             val = row.get(field, '')
             key_parts.append(str(val))
         return '|'.join(key_parts)
-    
+
     def _rows_match(self, actual: Dict, golden: Dict) -> bool:
         """Check if two rows match."""
         for field in actual.keys():
@@ -113,33 +101,29 @@ class CSVComparator:
                 if not self._values_match(actual[field], golden[field], field):
                     return False
         return True
-    
+
     def _values_match(self, actual: str, golden: str, field: str) -> bool:
         """Check if two field values match."""
         # Numeric fields that should be compared with tolerance
         numeric_fields = ['amount_brl', 'fx_rate', 'iof_brl', 'amount_orig', 'amount_usd']
-        
         if field in numeric_fields:
             return self.compare_numeric(actual, golden)
         else:
-            return actual.strip() == golden.strip()
-    
+            return (actual or "").strip() == (golden or "").strip()
+
     def _find_differences(self, actual: Dict, golden: Dict) -> List[Dict]:
         """Find specific field differences between two rows."""
         differences = []
         all_fields = set(actual.keys()) | set(golden.keys())
-        
         for field in all_fields:
             actual_val = actual.get(field, '')
             golden_val = golden.get(field, '')
-            
             if not self._values_match(actual_val, golden_val, field):
                 differences.append({
                     "field": field,
                     "actual": actual_val,
                     "golden": golden_val
                 })
-        
         return differences
 
 
