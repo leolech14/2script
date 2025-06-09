@@ -2,12 +2,38 @@
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+py-modules = [
+    "itau_parser_ultimate",
+    "golden_validator", 
+    "ai_enhanced_parser",
+    "script"
+]
+
+[tool.setuptools.packages.find]
+exclude = [
+    "lab*",
+    "lab2*", 
+    "mlruns*",
+    "contest*",
+    "all_pdfs*",
+    "chroma_db*",
+    "notebooks*", 
+    "csv_output*",
+    "test_output*",
+    "best_outputs*",
+    "test_outputs*",
+    "all_pdfs_output*",
+    "production_parser*",
+    "docs*"
+]
+
 [project]
 name = "itau-pdf-parser"
 version = "1.0.0"
 description = "Ultimate Itaú PDF to CSV parser with 100% accuracy"
 authors = [{name = "Your Name", email = "your.email@example.com"}]
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "pdfplumber>=0.9.0",
