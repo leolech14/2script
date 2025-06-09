@@ -1,0 +1,30 @@
+ai_enhancement:
+  enabled: true
+  learning:
+    auto_learn: true
+    cross_validation: true
+    min_pattern_frequency: 3
+    pattern_discovery: true
+  model_configs:
+    embedding_model: all-MiniLM-L6-v2
+    fallback_model: gpt-4o-mini
+    primary_model: gpt-4o
+  thresholds:
+    confidence_threshold: 0.8
+    recategorization_threshold: 0.7
+    similarity_threshold: 0.3
+  vector_db:
+    collection_name: transaction_patterns
+    max_results: 5
+    path: ./chroma_db
+monitoring:
+  alerts:
+    accuracy_drop_threshold: 0.05
+    processing_time_threshold: 300
+  mlflow_tracking: true
+  performance_metrics:
+  - accuracy
+  - coverage
+  - processing_time
+  - ai_enhancements
+  - vector_matches
