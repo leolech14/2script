@@ -130,8 +130,8 @@ def main():
         rule = extract_pattern_rule(g, matched_line, txt_lines)
         golden_rules.append(rule)
 
-    # 3. Build CSV skeleton and enrich metadata
-    schema = list(golden_rows[0].keys()) + ["category", "merchant_city", "fx_rate"]
+    # 3. Build CSV skeleton and enrich metadata  
+    schema = list(golden_rows[0].keys())  # Use golden schema exactly
     csv_rows = []
     for (g, matched_line) in matches:
         row = dict(g)
