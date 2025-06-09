@@ -118,19 +118,21 @@ def decomma(x: str | Decimal) -> Decimal:
         return Decimal("0.00")
 
 
-def calculate_ledger_hash(card_last4: str, post_date: str, desc_raw: str, valor_brl: str) -> str:
+def calculate_ledger_hash(card_last4: str, post_date: str, desc_raw: str, valor_brl: str, installment_tot: str = "", categoria_high: str = "") -> str:
     """
-    Simple deterministic hash for golden CSV alignment.
-    Uses: card|date|description|amount
+    Golden CSV compatible hash using 6 fields.
+    Uses: card|date|description|amount|installment_tot|category
     """
-    # Normalize inputs
+    # Normalize inputs to match golden format
     card = (card_last4 or "").strip()
     date = (post_date or "").strip()
-    desc = (desc_raw or "").strip().lower()
+    desc = (desc_raw or "").strip()  # Keep original case
     amount = (valor_brl or "").strip()
+    ins_tot = (installment_tot or "").strip()
+    category = (categoria_high or "").strip()
     
-    # Create hash input
-    key = f"{card}|{date}|{desc}|{amount}"
+    # Create hash input - exact format from logic_behind_itau_statements.txt
+    key = f"{card}|{date}|{desc}|{amount}|{ins_tot}|{category}"
     return hashlib.sha1(key.encode('utf-8')).hexdigest()
 
 
@@ -253,7 +255,8 @@ class Transaction:
     def finalise(self):
         # Ledger hash uses canonical fields for deduplication
         self.ledger_hash = calculate_ledger_hash(
-            self.card_last4, self.post_date, self.desc_raw, self.valor_brl
+            self.card_last4, self.post_date, self.desc_raw, self.valor_brl,
+            str(self.installment_tot or ""), self.categoria_high
         )
 
     def to_csv_row(self) -> dict:
@@ -282,12 +285,12 @@ class Transaction:
             if k not in d:
                 d[k] = ""
         
-        # Format decimals as strings with comma (Brazilian format)
+        # Format decimals as strings with dot (Golden CSV format)
         for k in ("amount_brl", "amount_orig", "amount_usd", "fx_rate", "iof_brl", "prev_bill_amount", "interest_amount"):
             if isinstance(d[k], Decimal):
-                d[k] = f"{d[k]:.2f}".replace(".", ",")
+                d[k] = f"{d[k]:.2f}"  # Keep dot separator for golden alignment
             elif isinstance(d[k], float):
-                d[k] = f"{d[k]:.2f}".replace(".", ",")
+                d[k] = f"{d[k]:.2f}"  # Keep dot separator for golden alignment
             elif not d[k]:  # Empty string
                 d[k] = "0.00"
         
@@ -367,14 +370,14 @@ def parse_fx_block(lines: List[str], idx: int) -> Tuple[Optional[Transaction], i
         post_date="",  # filled in main loop
         card_last4="", # filled in main loop
         desc_raw=desc,
-        valor_brl=f"{amount_brl:.2f}".replace(".", ","),
+        valor_brl=f"{amount_brl:.2f}",  # Keep dot separator
         installment_seq="",
         installment_tot="",
-        valor_orig=f"{amount_orig:.2f}".replace(".", ","),
+        valor_orig=f"{amount_orig:.2f}",  # Keep dot separator
         moeda_orig=moeda_orig,
         valor_usd=valor_usd,
-        fx_rate=fx_rate.replace(".", ",") if fx_rate else "",
-        iof_brl=iof.replace(".", ",") if iof else "",
+        fx_rate=fx_rate if fx_rate else "",  # Keep original format
+        iof_brl=iof if iof else "",  # Keep original format
         categoria_high="FX",
         merchant_city=merchant_city,
         ledger_hash="",
@@ -395,7 +398,7 @@ def parse_payment_line(l: str) -> Optional[Transaction]:
         post_date="",  # filled in main loop
         card_last4="", # filled in main loop
         desc_raw="PAGAMENTO",  # Clean description for golden alignment
-        valor_brl=f"{amt:.2f}".replace(".", ","),
+        valor_brl=f"{amt:.2f}",  # Keep dot separator
         installment_seq="",
         installment_tot="",
         valor_orig="",
@@ -428,14 +431,16 @@ def parse_domestic_line(l: str, next_line: str = "") -> Optional[Transaction]:
     ins_seq, ins_tot = "", ""
     ins_match = re.search(r"(\d{1,2})/(\d{1,2})", desc)
     if ins_match:
-        ins_seq, ins_tot = ins_match.group(1), ins_match.group(2)
+        # Convert to int to remove leading zeros, then back to string
+        ins_seq = str(int(ins_match.group(1)))
+        ins_tot = str(int(ins_match.group(2)))
     
     # Add a temporary date field for enrichment
     t = Transaction(
         post_date="",  # filled in main loop
         card_last4="", # filled in main loop
         desc_raw=desc,  # Use clean description, not full line
-        valor_brl=f"{amt:.2f}".replace(".", ","),
+        valor_brl=f"{amt:.2f}",  # Keep dot separator
         installment_seq=ins_seq,
         installment_tot=ins_tot,
         valor_orig="",
