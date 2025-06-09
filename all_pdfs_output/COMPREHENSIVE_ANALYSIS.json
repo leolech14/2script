@@ -1,0 +1,341 @@
+{
+  "summary": {
+    "total_pdfs": 14,
+    "total_transactions": 1752,
+    "date_range": {
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+    }
+  },
+  "period_breakdown": {
+    "Itau_2024-09": {
+      "transaction_count": 45,
+      "unique_cards": 2,
+      "total_amount": 6300.59,
+      "categories": {
+        "DIVERSOS": 40,
+        "FARM\u00c1CIA": 4,
+        "ENCARGOS": 1
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA03/": 10,
+        "PICPAY LBL INTEGRA04": 7,
+        "RECARGAPAY *LEONA04/": 6,
+        "PICPAY LBL INTEGRA03": 5,
+        "RECARGAPAY LEONARD03": 5
+      }
+    },
+    "Itau_2024-07": {
+      "transaction_count": 59,
+      "unique_cards": 3,
+      "total_amount": 15250.62,
+      "categories": {
+        "DIVERSOS": 51,
+        "FARM\u00c1CIA": 6,
+        "POSTO": 1,
+        "ENCARGOS": 1
+      },
+      "top_merchants": {
+        "binance.com": 13,
+        "RECARGAPAY *LEONA02/": 9,
+        "RECARGAPAY *LEONA01/": 8,
+        "PICPAY LBL INTEGRA01": 7,
+        "PICPAY LBL INTEGRA02": 4
+      }
+    },
+    "Itau_2024-06": {
+      "transaction_count": 60,
+      "unique_cards": 3,
+      "total_amount": 7034.249999999999,
+      "categories": {
+        "DIVERSOS": 41,
+        "FARM\u00c1CIA": 10,
+        "POSTO": 5,
+        "RESTAURANTE": 4
+      },
+      "top_merchants": {
+        "FARMACIA SAO JOAO": 5,
+        "BARBEARIA INDEPENDEN": 3,
+        "PANVEL FARMACIAS": 3,
+        "REFUGIO SKATE PARK L": 2,
+        "PIPPI PNEUS": 2
+      }
+    },
+    "Itau_2024-08": {
+      "transaction_count": 158,
+      "unique_cards": 2,
+      "total_amount": 55493.65,
+      "categories": {
+        "DIVERSOS": 144,
+        "FARM\u00c1CIA": 7,
+        "PAGAMENTO": 2,
+        "ENCARGOS": 2,
+        "POSTO": 1,
+        "ALIMENTA\u00c7\u00c3O": 1,
+        "RESTAURANTE": 1
+      },
+      "top_merchants": {
+        "binance.com": 51,
+        "RECARGAPAY *LEONA02/": 11,
+        "RECARGAPAY *LEONARDO": 10,
+        "RECARGAPAY *LEONA03/": 6,
+        "PICPAY LBL INTEGRA03": 5
+      }
+    },
+    "Itau_2025-01": {
+      "transaction_count": 148,
+      "unique_cards": 3,
+      "total_amount": 10332.72,
+      "categories": {
+        "DIVERSOS": 93,
+        "FARM\u00c1CIA": 45,
+        "RESTAURANTE": 5,
+        "POSTO": 2,
+        "ALIMENTA\u00c7\u00c3O": 1,
+        "SUPERMERCADO": 1,
+        "ENCARGOS": 1
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA07/": 10,
+        "RECARGAPAY *LEONA08/": 10,
+        "FARMACIA SAO JOAO": 8,
+        "APPLE.COM/BILL": 7,
+        "FARMACIA SAO JOAO 04": 6
+      }
+    },
+    "itau_2025-06": {
+      "transaction_count": 119,
+      "unique_cards": 3,
+      "total_amount": 17872.340000000004,
+      "categories": {
+        "DIVERSOS": 82,
+        "FARM\u00c1CIA": 27,
+        "SUPERMERCADO": 10
+      },
+      "top_merchants": {
+        "APPLE.COM/BILL": 15,
+        "OPENAI": 14,
+        "RECARGAPAY*LEONA12/1": 9,
+        "FARMACIASAOJOAO04/06": 6,
+        "FARMACIASAOJOAO06/06": 5
+      }
+    },
+    "Itau_2024-12": {
+      "transaction_count": 142,
+      "unique_cards": 3,
+      "total_amount": 16875.199999999997,
+      "categories": {
+        "DIVERSOS": 92,
+        "FARM\u00c1CIA": 39,
+        "RESTAURANTE": 5,
+        "SUPERMERCADO": 3,
+        "FX": 1,
+        "POSTO": 1,
+        "PAGAMENTO": 1
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA06/": 13,
+        "RECARGAPAY *LEONA07/": 10,
+        "PICPAY LBL INTEGRA06": 6,
+        "FARMACIA SAO JOAO 03": 6,
+        "FARMACIA SAO JOAO 02": 6
+      }
+    },
+    "Itau_2024-05": {
+      "transaction_count": 79,
+      "unique_cards": 1,
+      "total_amount": 25641.830000000005,
+      "categories": {
+        "DIVERSOS": 65,
+        "POSTO": 5,
+        "FARM\u00c1CIA": 2,
+        "PAGAMENTO": 2,
+        "RESTAURANTE": 2,
+        "SUPERMERCADO": 2,
+        "FX": 1
+      },
+      "top_merchants": {
+        "VIA SUL": 10,
+        "PAG*FAZENDAVENTONORT": 9,
+        "VIA COSTEIRA": 6,
+        "PG *UNFAIR ACADEMY08": 2,
+        "FARMACIA SAO JOAO": 2
+      }
+    },
+    "Itau_2025-05": {
+      "transaction_count": 236,
+      "unique_cards": 5,
+      "total_amount": 41916.6,
+      "categories": {
+        "DIVERSOS": 97,
+        "FX": 58,
+        "FARM\u00c1CIA": 57,
+        "ALIMENTA\u00c7\u00c3O": 10,
+        "PAGAMENTO": 5,
+        "SUPERMERCADO": 4,
+        "SA\u00daDE": 1,
+        "POSTO": 1,
+        "RESTAURANTE": 1,
+        "SERVI\u00c7OS": 1
+      },
+      "top_merchants": {
+        "APPLE.COM/BILL": 15,
+        "FARMACIA SAO JOAO 03": 11,
+        "FARMACIA SAO JOAO 02": 10,
+        "RECARGAPAY *LEONA12/": 10,
+        "FARMACIA SAO JOAO 05": 8
+      }
+    },
+    "Itau_2025-02": {
+      "transaction_count": 168,
+      "unique_cards": 3,
+      "total_amount": 13771.760000000002,
+      "categories": {
+        "DIVERSOS": 102,
+        "FARM\u00c1CIA": 47,
+        "POSTO": 9,
+        "SUPERMERCADO": 5,
+        "RESTAURANTE": 2,
+        "ALIMENTA\u00c7\u00c3O": 1,
+        "FX": 1,
+        "PAGAMENTO": 1
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA09/": 10,
+        "RECARGAPAY *LEONA08/": 9,
+        "FARMACIA SAO JOAO 02": 8,
+        "FARMACIA SAO JOAO 04": 7,
+        "FARMACIA SAO JOAO 01": 6
+      }
+    },
+    "Itau_2025-03": {
+      "transaction_count": 156,
+      "unique_cards": 3,
+      "total_amount": 10303.36,
+      "categories": {
+        "DIVERSOS": 94,
+        "FARM\u00c1CIA": 53,
+        "SUPERMERCADO": 5,
+        "RESTAURANTE": 2,
+        "POSTO": 1,
+        "ALIMENTA\u00c7\u00c3O": 1
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA10/": 10,
+        "RECARGAPAY *LEONA09/": 10,
+        "FARMACIA SAO JOAO 02": 8,
+        "FARMACIA SAO JOAO 03": 8,
+        "FARMACIA SAO JOAO 05": 7
+      }
+    },
+    "Itau_2025-04": {
+      "transaction_count": 172,
+      "unique_cards": 4,
+      "total_amount": 34984.009999999995,
+      "categories": {
+        "DIVERSOS": 95,
+        "FARM\u00c1CIA": 59,
+        "RESTAURANTE": 5,
+        "SUPERMERCADO": 5,
+        "ALIMENTA\u00c7\u00c3O": 3,
+        "PAGAMENTO": 2,
+        "POSTO": 2,
+        "FX": 1
+      },
+      "top_merchants": {
+        "FARMACIA SAO JOAO 02": 11,
+        "FARMACIA SAO JOAO 03": 10,
+        "RECARGAPAY *LEONA11/": 10,
+        "FARMACIA SAO JOAO 04": 8,
+        "RECARGAPAY *LEONA10/": 7
+      }
+    },
+    "Itau_2024-11": {
+      "transaction_count": 151,
+      "unique_cards": 3,
+      "total_amount": 16426.199999999997,
+      "categories": {
+        "DIVERSOS": 115,
+        "FARM\u00c1CIA": 30,
+        "RESTAURANTE": 3,
+        "POSTO": 3
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA05/": 13,
+        "RECARGAPAY *LEONA06/": 10,
+        "UBER* TRIP": 9,
+        "CONVENIENCIAS BRISAS": 9,
+        "PICPAY LBL INTEGRA05": 7
+      }
+    },
+    "Itau_2024-10": {
+      "transaction_count": 59,
+      "unique_cards": 2,
+      "total_amount": 7182.160000000001,
+      "categories": {
+        "DIVERSOS": 46,
+        "FARM\u00c1CIA": 10,
+        "RESTAURANTE": 1,
+        "POSTO": 1,
+        "ENCARGOS": 1
+      },
+      "top_merchants": {
+        "RECARGAPAY *LEONA04/": 12,
+        "RECARGAPAY *LEONA05/": 8,
+        "PICPAY LBL INTEGRA05": 6,
+        "RECARGAPAY LEONARD03": 5,
+        "PICPAY LBL INTEGRA04": 5
+      }
+    }
+  },
+  "global_analysis": {
+    "unique_cards": 5,
+    "total_amount": 279385.29,
+    "category_distribution": {
+      "DIVERSOS": 1157,
+      "FARM\u00c1CIA": 396,
+      "FX": 62,
+      "SUPERMERCADO": 35,
+      "POSTO": 32,
+      "RESTAURANTE": 31,
+      "ALIMENTA\u00c7\u00c3O": 17,
+      "PAGAMENTO": 13,
+      "ENCARGOS": 6,
+      "SA\u00daDE": 1,
+      "SERVI\u00c7OS": 1
+    },
+    "merchant_cities": {
+      "PASSO FUNDO": 419,
+      "SAO PAULO": 113,
+      "ROMA": 34,
+      "MARAU": 30,
+      "Osasco": 8,
+      "SAN FRANCISCO": 4,
+      "Roma": 4,
+      "FIUMICINO": 3,
+      "Kelsterbach": 3,
+      "PADOVA": 2
+    },
+    "average_transaction": 159.4664897260274,
+    "max_transaction": 8372.31,
+    "min_transaction": 0.01
+  },
+  "fx_analysis": {
+    "total_fx_transactions": 62,
+    "fx_percentage": 3.555045871559633,
+    "average_fx_rate": 6.1961290322580655,
+    "fx_currencies": {
+      "EUR": 45,
+      "USD": 12,
+      "BRL": 1
+    },
+    "fx_cities": {
+      "ROMA": 34,
+      "Roma": 4,
+      "SAN FRANCISCO": 4,
+      "Kelsterbach": 3,
+      "FIUMICINO": 3
+    }
+  },
+  "monthly_trends": {
+    
