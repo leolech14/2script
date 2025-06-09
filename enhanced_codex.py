@@ -3,18 +3,18 @@
 # Based on extensive business logic analysis from 4 script versions
 # Incorporates sophisticated FX parsing, payment filtering, and validation
 
-import re
-import csv
 import argparse
-import logging
+import csv
 import datetime
-import tracemalloc
-import time
 import hashlib
-from decimal import Decimal, ROUND_HALF_UP
+import logging
+import re
+import time
+import tracemalloc
+from collections import Counter
+from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
-from collections import Counter, defaultdict
-from datetime import datetime, date
 
 __version__ = "0.13.0"
 DATE_FMT_OUT = "%Y-%m-%d"
@@ -100,12 +100,12 @@ def sha1(card, date, desc, valor_brl, installment_tot, categoria_high):
 def classify(desc, amt):
     """Enhanced categorization with expanded mapping"""
     d = str(desc).upper()
-    
+
     # Priority classifications
     if "7117" in d: return "PAGAMENTO"
     if "AJUSTE" in d or (abs(amt) <= Decimal("0.30") and abs(amt) > 0): return "AJUSTE"
     if any(k in d for k in ("IOF", "JUROS", "MULTA")): return "ENCARGOS"
-    
+
     # Enhanced category mapping (from business logic analysis)
     mapping = [
         # Services
@@ -116,14 +116,14 @@ def classify(desc, amt):
         ("TARIFA", "SERVIÇOS"),
         ("PRODUTO", "SERVIÇOS"),
         ("SERVIÇO", "SERVIÇOS"),
-        
+
         # Specific merchants
         ("SUPERMERC", "SUPERMERCADO"),
         ("MERCADO", "SUPERMERCADO"),
         ("FARMAC", "FARMÁCIA"),
         ("DROG", "FARMÁCIA"),
         ("PANVEL", "FARMÁCIA"),
-        
+
         # Food & dining
         ("RESTAUR", "RESTAURANTE"),
         ("PIZZ", "RESTAURANTE"),
@@ -132,7 +132,7 @@ def classify(desc, amt):
         ("LANCHE", "RESTAURANTE"),
         ("ALIMENT", "ALIMENTAÇÃO"),
         ("IFD", "ALIMENTAÇÃO"),
-        
+
         # Transportation
         ("POSTO", "POSTO"),
         ("COMBUST", "POSTO"),
@@ -141,13 +141,13 @@ def classify(desc, amt):
         ("TAXI", "TRANSPORTE"),
         ("TRANSP", "TRANSPORTE"),
         ("PASSAGEM", "TRANSPORTE"),
-        
+
         # Travel & entertainment
         ("AEROPORTO", "TURISMO"),
         ("HOTEL", "TURISMO"),
         ("TUR", "TURISMO"),
         ("ENTRETENIM", "TURISMO"),
-        
+
         # Other categories
         ("SAUD", "SAÚDE"),
         ("VEIC", "VEÍCULOS"),
@@ -158,13 +158,13 @@ def classify(desc, amt):
         ("HOBBY", "HOBBY"),
         ("DIVERS", "DIVERSOS"),
     ]
-    
+
     for k, v in mapping:
         if k in d: return v
-    
+
     # FX detection
     if "EUR" in d or "USD" in d or "FX" in d: return "FX"
-    
+
     # Default
     return "DIVERSOS"
 
@@ -190,7 +190,7 @@ def build(card, date, desc, valor_brl, cat, ry, rm, **kv):
     """Enhanced transaction builder with better city extraction"""
     norm = norm_date(date, ry, rm) if date else ""
     ledger = sha1(card, norm, desc, valor_brl, kv.get("installment_tot"), cat)
-    
+
     # Enhanced merchant city extraction
     city = None
     if cat == "FX" and "merchant_city" in kv and kv["merchant_city"]:
@@ -199,28 +199,28 @@ def build(card, date, desc, valor_brl, cat, ry, rm, **kv):
         city = str(desc).split()[0].title()
     elif cat == "FX" and desc:
         city = str(desc).title()
-    
+
     # Remove merchant_city from kv if already processed
     kv = dict(kv)
     if "merchant_city" in kv:
         del kv["merchant_city"]
-    
+
     d = dict(
-        card_last4=card, 
-        post_date=norm, 
-        desc_raw=desc, 
+        card_last4=card,
+        post_date=norm,
+        desc_raw=desc,
         valor_brl=valor_brl,
-        categoria_high=cat, 
-        merchant_city=city, 
-        ledger_hash=ledger, 
+        categoria_high=cat,
+        merchant_city=city,
+        ledger_hash=ledger,
         **kv
     )
-    
+
     # Fill missing schema fields
     for k in SCHEMA:
         if k not in d:
             d[k] = ""
-    
+
     return d
 
 # ================================================================
@@ -243,7 +243,7 @@ def parse_fx_chunk(chunk: list[str]):
 
     iof_brl = Decimal('0')
     rate_line = None
-    
+
     for ln in chunk[1:]:
         if RE_IOF_LINE.search(ln):
             m = RE_BRL.search(ln)
@@ -258,9 +258,9 @@ def parse_fx_chunk(chunk: list[str]):
     dolar_match = RE_DOLAR.search(rate_line)
     if not dolar_match:
         return None
-        
+
     fx_rate = Decimal(dolar_match.group(1).replace(',', '.'))
-    
+
     return {
         "date": main.group('date'),
         "descr": main.group('descr'),
@@ -279,7 +279,7 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
     rows, stats = [], Counter()
     card = "0000"
     iof_postings = []
-    
+
     # Handle both PDF and TXT files
     if path.suffix.lower() == '.pdf':
         try:
@@ -292,32 +292,32 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
             return [], stats
     else:
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
-    
+
     stats["lines"] = len(lines)
     skip = 0
     last_date = None
     pagamento_seq = 0
     seen_fx = set()
-    
+
     i = 0
     while i < len(lines):
         if skip:
             skip -= 1
             i += 1
             continue
-            
+
         line = clean(lines[i])
-        
+
         # Skip headers and empty lines
         if RE_DROP_HDR.match(line):
             stats["hdr_drop"] += 1
             i += 1
             continue
-        
+
         if not line:
             i += 1
             continue
-        
+
         # Extract card number
         m_card = RE_CARD.search(line)
         if m_card:
@@ -328,14 +328,14 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
         # FX parsing with state machine (2 or 3 lines)
         fx_res = None
         consumed = 1
-        
+
         if i + 2 < len(lines):
             fx_res = parse_fx_chunk([line, clean(lines[i+1]), clean(lines[i+2])])
             consumed = 3
         if not fx_res and i + 1 < len(lines):
             fx_res = parse_fx_chunk([line, clean(lines[i+1])])
             consumed = 2
-            
+
         if fx_res:
             fx_key = (fx_res['descr'], fx_res['date'], fx_res['valor_brl'], fx_res['valor_orig'], fx_res['fx_rate'])
             if fx_key in seen_fx:
@@ -377,15 +377,15 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
             md = RE_DOM.match(line)
             if md:
                 desc, amt = md.group("desc"), decomma(md.group("amt"))
-                
+
                 # Value validation
                 if abs(amt) > 10000 or abs(amt) < 0.01:
                     print(f"[VALOR-SUSPEITO] {desc} {amt}")
-                
+
                 # Enhanced installment detection
                 re_parc = re.compile(r"(\d{1,2})\s*/\s*(\d{1,2})|(\d{1,2})\s*x\s*R\$|(\d{1,2})\s*de\s*(\d{1,2})", re.I)
                 ins = RE_INST.search(desc) or RE_INST_TXT.search(desc) or re_parc.search(desc)
-                
+
                 if ins:
                     if ins.lastindex == 2:
                         seq, tot = int(ins.group(1)), int(ins.group(2))
@@ -395,7 +395,7 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
                         seq, tot = int(ins.group(4)), int(ins.group(5))
                     else:
                         seq, tot = None, None
-                    
+
                     # Only accept installments from current cycle
                     if tot and seq and seq > tot:
                         print(f"[PARCELA-ERR] Installment out of cycle: {desc}")
@@ -403,13 +403,13 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
                         continue
                 else:
                     seq, tot = None, None
-                
+
                 cat = classify(desc, amt)
-                rows.append(build(card, md.group("date"), desc, amt, cat, ref_y, ref_m, 
+                rows.append(build(card, md.group("date"), desc, amt, cat, ref_y, ref_m,
                                 installment_seq=seq, installment_tot=tot))
                 stats[cat.lower()] += 1
                 last_date = md.group("date")
-                
+
             i += 1
             continue
 
@@ -419,7 +419,7 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
             mval = RE_BRL.search(line)
             if mval:
                 valor = decomma(mval.group(0))
-                iof_postings.append(build(card, last_date or "", "Repasse de IOF em R$", 
+                iof_postings.append(build(card, last_date or "", "Repasse de IOF em R$",
                                         valor, "IOF", ref_y, ref_m, iof_brl=valor))
                 stats["iof"] += 1
             i += 1
@@ -447,16 +447,16 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
                     f.write(f"  [prev] {prev_line}\n")
                 if next_line:
                     f.write(f"  [next] {next_line}\n")
-        
+
         i += 1
 
     # Add IOF postings
     rows.extend(iof_postings)
-    
+
     # Final filtering
     rows = [r for r in rows if r.get("post_date") and r.get("valor_brl") not in ("", None)]
     stats["postings"] = len(rows)
-    
+
     return rows, stats
 
 # ================================================================
@@ -473,13 +473,13 @@ def calculate_metrics(rows):
     """Calculate comprehensive financial metrics"""
     kpi = Counter()
     for r in rows:
-        if r["categoria_high"] in ("ALIMENTAÇÃO", "SAÚDE", "VESTUÁRIO", "VEÍCULOS", "FARMÁCIA", "SUPERMERCADO", "POSTO", "RESTAURANTE", "TURISMO"): 
+        if r["categoria_high"] in ("ALIMENTAÇÃO", "SAÚDE", "VESTUÁRIO", "VEÍCULOS", "FARMÁCIA", "SUPERMERCADO", "POSTO", "RESTAURANTE", "TURISMO"):
             kpi['domestic'] += 1
-        elif r["categoria_high"] == "FX": 
+        elif r["categoria_high"] == "FX":
             kpi['fx'] += 1
-        elif r["categoria_high"] in ("SERVIÇOS",): 
+        elif r["categoria_high"] in ("SERVIÇOS",):
             kpi['services'] += 1
-        else: 
+        else:
             kpi['misc'] += 1
 
     brl_dom = sum(r["valor_brl"] for r in rows if r["categoria_high"] in ("ALIMENTAÇÃO", "SAÚDE", "VESTUÁRIO", "VEÍCULOS", "FARMÁCIA", "SUPERMERCADO", "POSTO", "RESTAURANTE", "TURISMO"))
@@ -499,30 +499,30 @@ def main():
     ap = argparse.ArgumentParser(description="Enhanced Itaú statement parser")
     ap.add_argument("files", nargs="+", help="PDF or TXT files to process")
     ap.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-    
+
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    
+
     total = Counter()
     t0 = time.perf_counter()
-    
+
     for f in args.files:
         p = Path(f)
-        
+
         # Extract date from filename
         m = re.search(r"(20\d{2})[\-_]?(\d{2})", p.stem)
         if m:
             ry, rm = int(m.group(1)), int(m.group(2))
         else:
             ry, rm = datetime.now().year, datetime.now().month
-        
-        log_block("START", version=__version__, file=p.name, 
+
+        log_block("START", version=__version__, file=p.name,
                  sha=hashlib.sha1(p.read_bytes()).hexdigest()[:8])
-        
+
         # Parse file
         rows, stats = parse_txt(p, ry, rm, args.verbose)
         total += stats
-        
+
         # Deduplication check
         seen_hashes = set()
         dupes = 0
@@ -532,40 +532,40 @@ def main():
                 dupes += 1
             else:
                 seen_hashes.add(r["ledger_hash"])
-        
+
         # Calculate metrics
         kpi, brl_dom, brl_fx, brl_serv, neg_rows, neg_sum = calculate_metrics(rows)
-        
+
         # Logging
         log_block("PARSE", lines=stats["lines"], postings=stats["postings"], dupes=dupes)
         log_block("CLASSIFY", domestic=kpi["domestic"], fx=kpi["fx"], services=kpi["services"], misc=kpi["misc"])
         log_block("AMOUNTS", brl_dom=f"{brl_dom:,.2f}", brl_fx=f"{brl_fx:,.2f}", brl_serv=f"{brl_serv:,.2f}")
         log_block("SIGNS", neg_rows=neg_rows, neg_sum=f"{neg_sum:,.2f}")
-        
+
         # Write CSV
         output_file = p.with_name(f"{p.stem}_enhanced.csv")
         with output_file.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=SCHEMA)
             writer.writeheader()
             writer.writerows(rows)
-        
+
         size_kb = output_file.stat().st_size // 1024
         log_block("OUTPUT", file=output_file.name, size_kb=size_kb, rows=len(rows))
-        
+
         mem = tracemalloc.get_traced_memory()[1] // 1024 ** 2
         log_block("MEM", peak=f"{mem} MB")
         log_block("END", result="SUCCESS")
-    
+
     # Summary
     dur = time.perf_counter() - t0
     eff_g = total["lines"] - total.get("hdr_drop", 0)
     acc_g = 100 * (eff_g - total["regex_miss"]) / max(eff_g, 1)
-    
-    log_block("SUMMARY", 
-             files=len(args.files), 
-             postings=total["postings"], 
-             miss=total["regex_miss"], 
-             accuracy=f"{acc_g:.1f}%", 
+
+    log_block("SUMMARY",
+             files=len(args.files),
+             postings=total["postings"],
+             miss=total["regex_miss"],
+             accuracy=f"{acc_g:.1f}%",
              duration=f"{dur:.2f}s")
 
 if __name__ == "__main__":

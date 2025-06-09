@@ -17,24 +17,18 @@ import argparse
 import csv
 import hashlib
 import logging
-import datetime
-import tracemalloc
-import time
 import re
 import sys
-from dataclasses import dataclass, asdict
-from decimal import Decimal, ROUND_HALF_UP
+from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
-from collections import Counter, defaultdict
-from datetime import datetime, date
-from typing import List, Tuple, Optional
 
 # ──────────────────────────────────────────────────────────────
 # 1. CONFIGURATION TABLES  (edit without touching code below)
 # ──────────────────────────────────────────────────────────────
 SCHEMA = [
     "card_last4",
-    "post_date", 
+    "post_date",
     "desc_raw",
     "amount_brl",
     "installment_seq",
@@ -130,7 +124,7 @@ def calculate_ledger_hash(card_last4: str, post_date: str, desc_raw: str, valor_
     amount = (valor_brl or "").strip()
     ins_tot = (installment_tot or "").strip()
     category = (categoria_high or "").strip()
-    
+
     # Create hash input - exact format from logic_behind_itau_statements.txt
     key = f"{card}|{date}|{desc}|{amount}|{ins_tot}|{category}"
     return hashlib.sha1(key.encode('utf-8')).hexdigest()
@@ -181,14 +175,14 @@ def extract_merchant_city_international(second_line: str) -> str:
     """
     if not second_line:
         return ""
-    
+
     # Find city as text before first number
     import re
     match = re.match(r"([A-Za-zÀ-ÿ\s]+?)\s+\d", second_line)
     if match:
         city = match.group(1).strip()
         return city.upper() if city else ""  # Keep uppercase for golden alignment
-    
+
     # Fallback: first word
     words = second_line.split()
     return words[0].upper() if words else ""
@@ -198,7 +192,7 @@ def classify(desc: str, amt: Decimal) -> str:
     Category assignment to match golden CSV expectations.
     """
     up = desc.upper()
-    
+
     # Priority classifications
     if "7117" in up:
         return "PAGAMENTO"
@@ -206,7 +200,7 @@ def classify(desc: str, amt: Decimal) -> str:
         return "AJUSTE"
     if any(k in up for k in ("IOF", "JUROS", "MULTA")):
         return "ENCARGOS"
-    
+
     # Category mapping based on golden CSV patterns
     if "FARMAC" in up or "DROG" in up:
         return "FARMÁCIA"
@@ -222,11 +216,11 @@ def classify(desc: str, amt: Decimal) -> str:
         return "TURISMO"
     if "APPLE" in up or "DISNEY" in up or "NETFLIX" in up:
         return "DIVERSOS"
-    
+
     # FX detection
     if any(c in up for c in ("USD", "EUR", "FX")) or "DOLAR" in up:
         return "FX"
-    
+
     # Default fallback
     return "DIVERSOS"
 
@@ -240,8 +234,8 @@ class Transaction:
     card_last4: str = ""
     desc_raw: str = ""
     valor_brl: str = ""
-    installment_seq: Optional[int] = None
-    installment_tot: Optional[int] = None
+    installment_seq: int | None = None
+    installment_tot: int | None = None
     valor_orig: str = ""
     moeda_orig: str = ""
     valor_usd: str = ""
@@ -279,12 +273,12 @@ class Transaction:
             "currency_orig": self.moeda_orig,
             "amount_usd": self.valor_usd
         }
-        
+
         # Ensure all SCHEMA fields are present
         for k in SCHEMA:
             if k not in d:
                 d[k] = ""
-        
+
         # Format decimals as strings with dot (Golden CSV format)
         for k in ("amount_brl", "amount_orig", "amount_usd", "fx_rate", "iof_brl", "prev_bill_amount", "interest_amount"):
             if isinstance(d[k], Decimal):
@@ -293,26 +287,26 @@ class Transaction:
                 d[k] = f"{d[k]:.2f}"  # Keep dot separator for golden alignment
             elif not d[k]:  # Empty string
                 d[k] = "0.00"
-        
+
         # Installments as int or 0
         for k in ("installment_seq", "installment_tot"):
             if d[k] is None or d[k] == "":
                 d[k] = "0"
-                
+
         return d
 
 
 # ──────────────────────────────────────────────────────────────
 # 5. LOADERS
 # ──────────────────────────────────────────────────────────────
-def load_lines(path: Path) -> List[str]:
+def load_lines(path: Path) -> list[str]:
     "Return list of cleaned text lines from PDF or TXT."
     if path.suffix.lower() == ".pdf":
         try:
             import pdfplumber
         except ImportError:
             sys.exit("pdfplumber missing: pip install pdfplumber")
-        out: List[str] = []
+        out: list[str] = []
         with pdfplumber.open(str(path)) as pdf:
             for page in pdf.pages:
                 raw = page.extract_text() or ""
@@ -325,7 +319,7 @@ def load_lines(path: Path) -> List[str]:
 # ──────────────────────────────────────────────────────────────
 # 6. BLOCK-LEVEL PARSERS
 # ──────────────────────────────────────────────────────────────
-def parse_fx_block(lines: List[str], idx: int) -> Tuple[Optional[Transaction], int]:
+def parse_fx_block(lines: list[str], idx: int) -> tuple[Transaction | None, int]:
     """
     Try to parse FX cluster at position idx.
     Returns (Transaction | None, lines_consumed)
@@ -388,7 +382,7 @@ def parse_fx_block(lines: List[str], idx: int) -> Tuple[Optional[Transaction], i
     return t, consumed
 
 
-def parse_payment_line(l: str) -> Optional[Transaction]:
+def parse_payment_line(l: str) -> Transaction | None:
     mp = RE_PAYMENT.match(l)
     if not mp:
         return None
@@ -416,17 +410,17 @@ def parse_payment_line(l: str) -> Optional[Transaction]:
     return t
 
 
-def parse_domestic_line(l: str, next_line: str = "") -> Optional[Transaction]:
+def parse_domestic_line(l: str, next_line: str = "") -> Transaction | None:
     md = RE_DOMESTIC.match(l)
     if not md:
         return None
     amt = decomma(md.group("amt"))
     desc = md.group("desc")
     date_raw = md.group("date")
-    
+
     # Extract merchant city from next line (domestic format)
     merchant_city = extract_merchant_city_domestic(next_line) if next_line else ""
-    
+
     # Try to extract installments from description
     ins_seq, ins_tot = "", ""
     ins_match = re.search(r"(\d{1,2})/(\d{1,2})", desc)
@@ -434,7 +428,7 @@ def parse_domestic_line(l: str, next_line: str = "") -> Optional[Transaction]:
         # Convert to int to remove leading zeros, then back to string
         ins_seq = str(int(ins_match.group(1)))
         ins_tot = str(int(ins_match.group(2)))
-    
+
     # Add a temporary date field for enrichment
     t = Transaction(
         post_date="",  # filled in main loop
@@ -461,7 +455,7 @@ def parse_domestic_line(l: str, next_line: str = "") -> Optional[Transaction]:
 # ──────────────────────────────────────────────────────────────
 # 7. MAIN PARSER LOOP
 # ──────────────────────────────────────────────────────────────
-def parse_statement(path: Path) -> List[Transaction]:
+def parse_statement(path: Path) -> list[Transaction]:
     lines = load_lines(path)
     logging.info("Loaded %s cleaned lines from %s", len(lines), path.name)
 
@@ -474,7 +468,7 @@ def parse_statement(path: Path) -> List[Transaction]:
     )
 
     card_last4 = "0000"
-    txs: List[Transaction] = []
+    txs: list[Transaction] = []
     i = 0
     pagamento_idx = 0
 
@@ -535,7 +529,7 @@ def parse_statement(path: Path) -> List[Transaction]:
 # ──────────────────────────────────────────────────────────────
 # 8. CSV WRITER
 # ──────────────────────────────────────────────────────────────
-def write_csv(rows: List[Transaction], out_path: Path):
+def write_csv(rows: list[Transaction], out_path: Path):
     with out_path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=SCHEMA, delimiter=";")
         w.writeheader()
@@ -547,7 +541,7 @@ def write_csv(rows: List[Transaction], out_path: Path):
 # ──────────────────────────────────────────────────────────────
 # 9. CLI
 # ──────────────────────────────────────────────────────────────
-def cli(argv: List[str] | None = None):
+def cli(argv: list[str] | None = None):
     p = argparse.ArgumentParser(
         description="Unified Itaú PDF/TXT → CSV parser (golden-ready)"
     )

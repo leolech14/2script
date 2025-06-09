@@ -1,0 +1,52 @@
+{
+  "amp.mcpServers": {
+    "ruff": {
+      "command": "npx",
+      "args": ["-y", "mcp-ruff"]
+    },
+    "pytest": {
+      "command": "npx", 
+      "args": ["-y", "mcp-pytest"]
+    },
+    "pdftools": {
+      "command": "docker",
+      "args": ["run", "--rm", "-v", "${workspaceFolder}:/workspace", "pdf-tools-mcp"]
+    },
+    "act": {
+      "command": "docker",
+      "args": ["run", "--rm", "-v", "${workspaceFolder}:/src", "ghcr.io/nektos/act"]
+    },
+    "golden-validator": {
+      "command": "python",
+      "args": ["golden_validator.py"]
+    }
+  },
+  
+  "ruff.runOnSave": "all",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": true,
+    "source.organizeImports": true
+  },
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests"],
+  
+  "files.associations": {
+    "*.yml": "yaml",
+    "*.yaml": "yaml"
+  },
+  
+  "github-actions.workflows.pinned": [".github/workflows"],
+  
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": "/.github/workflows/*.yml"
+  },
+  
+  "files.watcherExclude": {
+    "**/test_outputs/**": true,
+    "**/all_pdfs_output/**": true,
+    "**/__pycache__/**": true,
+    "**/htmlcov/**": true,
+    "**/.pytest_cache/**": true
+  }
+}

@@ -10,16 +10,15 @@ from __future__ import annotations
 
 import argparse
 import csv
-import logging
-import sys
-from pathlib import Path
-from typing import Iterator, List
-
-import pdfplumber                               # pip install pdfplumber
-from pathlib import Path as PathLib
-import re
-from decimal import Decimal
 import hashlib
+import logging
+import re
+import sys
+from collections.abc import Iterator
+from decimal import Decimal
+from pathlib import Path
+
+import pdfplumber  # pip install pdfplumber
 
 CSV_HEADER = [
     "card_last4",
@@ -65,17 +64,17 @@ def parse_statement_line(line: str) -> dict | None:
     date_pattern = r'(\d{2}/\d{2})'
     amount_pattern = r'([\d.,]+)'
     card_pattern = r'final (\d{4})'
-    
+
     # Try to match a transaction line
     transaction = re.match(f'{date_pattern}\\s+(.+?)\\s+{amount_pattern}$', line)
     if transaction:
         date, description, amount = transaction.groups()
         amount = Decimal(amount.replace('.', '').replace(',', '.'))
-        
+
         # Try to find card number
         card_match = re.search(card_pattern, description)
         card_last4 = card_match.group(1) if card_match else '0000'
-        
+
         # Simple categorization
         desc_upper = description.upper()
         if 'PAGAMENTO' in desc_upper:
@@ -88,11 +87,11 @@ def parse_statement_line(line: str) -> dict | None:
             category = 'SUPERMERCADO'
         else:
             category = 'DIVERSOS'
-        
+
         # Generate simple hash
         hash_input = f"{card_last4}|{date}|{description}|{amount}"
         ledger_hash = hashlib.sha1(hash_input.encode()).hexdigest()
-        
+
         # Convert DD/MM to YYYY-MM-DD format (assuming current year)
         if '/' in date and len(date.split('/')) == 2:
             day, month = date.split('/')
@@ -101,7 +100,7 @@ def parse_statement_line(line: str) -> dict | None:
             normalized_date = f"{current_year}-{int(month):02d}-{int(day):02d}"
         else:
             normalized_date = date
-        
+
         return {
             'card_last4': card_last4,
             'post_date': normalized_date,
@@ -120,13 +119,13 @@ def parse_statement_line(line: str) -> dict | None:
             'currency_orig': '',
             'amount_usd': '',
         }
-    
+
     return None
 
 
-def parse_lines(lines: Iterator[str]) -> List[dict]:
+def parse_lines(lines: Iterator[str]) -> list[dict]:
     """Convert raw lines into row-dicts via the basic parser."""
-    rows: List[dict] = []
+    rows: list[dict] = []
     for line in lines:
         try:
             row = parse_statement_line(line)
@@ -137,7 +136,7 @@ def parse_lines(lines: Iterator[str]) -> List[dict]:
     return rows
 
 
-def write_csv(rows: List[dict], out_fh) -> None:
+def write_csv(rows: list[dict], out_fh) -> None:
     writer = csv.DictWriter(out_fh, fieldnames=CSV_HEADER, dialect="unix")
     writer.writeheader()
     writer.writerows(rows)

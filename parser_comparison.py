@@ -4,15 +4,15 @@ Parser Comparison Tool
 Compares the outputs of all three parsers and shows their differences.
 """
 
-import csv
 import argparse
-from pathlib import Path
-from collections import defaultdict
-from typing import Dict, List
 import json
+from collections import defaultdict
+from pathlib import Path
+
 import parser_utils  # NEW: for shared utilities
 
-def load_csv_data(file_path: Path) -> List[Dict]:
+
+def load_csv_data(file_path: Path) -> list[dict]:
     """Load CSV data and normalize column names."""
     if not file_path.exists():
         print(f"Warning: File not found: {file_path}")
@@ -40,7 +40,7 @@ def load_csv_data(file_path: Path) -> List[Dict]:
         normalized.append(normalized_row)
     return normalized
 
-def create_transaction_key(row: Dict) -> str:
+def create_transaction_key(row: dict) -> str:
     """Create a unique key for matching transactions across parsers."""
     date = row.get('date', '').strip()
     desc = row.get('description', '').strip()
@@ -55,27 +55,27 @@ def create_transaction_key(row: Dict) -> str:
         amount_clean = '0'
     return f"{date}|{desc}|{amount_clean}"
 
-def analyze_parsers(codex_file: Path, pdf_csv_file: Path, text_csv_file: Path) -> Dict:
+def analyze_parsers(codex_file: Path, pdf_csv_file: Path, text_csv_file: Path) -> dict:
     """Analyze differences between the three parsers."""
-    
+
     # Load data from all three parsers
     codex_data = load_csv_data(codex_file)
     pdf_csv_data = load_csv_data(pdf_csv_file)
     text_csv_data = load_csv_data(text_csv_file)
-    
-    print(f"Loaded data:")
+
+    print("Loaded data:")
     print(f"  Codex: {len(codex_data)} rows")
     print(f"  PDF-to-CSV: {len(pdf_csv_data)} rows")
     print(f"  Text-to-CSV: {len(text_csv_data)} rows")
-    
+
     # Create transaction indexes
     codex_index = {create_transaction_key(row): row for row in codex_data}
     pdf_csv_index = {create_transaction_key(row): row for row in pdf_csv_data}
     text_csv_index = {create_transaction_key(row): row for row in text_csv_data}
-    
+
     # Find all unique transaction keys
     all_keys = set(codex_index.keys()) | set(pdf_csv_index.keys()) | set(text_csv_index.keys())
-    
+
     analysis = {
         "total_unique_transactions": len(all_keys),
         "parser_coverage": {
@@ -98,13 +98,13 @@ def analyze_parsers(codex_file: Path, pdf_csv_file: Path, text_csv_file: Path) -
         },
         "field_analysis": defaultdict(lambda: {"codex": 0, "pdf_to_csv": 0, "text_to_csv": 0})
     }
-    
+
     # Analyze transaction coverage
     for key in all_keys:
         in_codex = key in codex_index
         in_pdf = key in pdf_csv_index
         in_text = key in text_csv_index
-        
+
         if in_codex and in_pdf and in_text:
             analysis["common_transactions"]["all_three"] += 1
             if len(analysis["sample_transactions"]["all_three"]) < 3:
@@ -126,27 +126,27 @@ def analyze_parsers(codex_file: Path, pdf_csv_file: Path, text_csv_file: Path) -
             analysis["common_transactions"]["pdf_only"] += 1
         elif in_text:
             analysis["common_transactions"]["text_only"] += 1
-    
+
     # Analyze field completeness
     for parser_name, data in [("codex", codex_data), ("pdf_to_csv", pdf_csv_data), ("text_to_csv", text_csv_data)]:
         for row in data:
             for field, value in row.items():
                 if value and str(value).strip():  # Non-empty field
                     analysis["field_analysis"][field][parser_name] += 1
-    
+
     return analysis
 
-def print_analysis_report(analysis: Dict):
+def print_analysis_report(analysis: dict):
     """Print a comprehensive analysis report."""
-    
+
     print(f"\n{'='*60}")
     print("PARSER COMPARISON ANALYSIS")
     print(f"{'='*60}")
-    
-    print(f"\n📊 TRANSACTION COVERAGE:")
+
+    print("\n📊 TRANSACTION COVERAGE:")
     total = analysis["total_unique_transactions"]
     coverage = analysis["common_transactions"]
-    
+
     print(f"  Total unique transactions: {total}")
     print(f"  Found by all three parsers: {coverage['all_three']} ({coverage['all_three']/total*100:.1f}%)")
     print(f"  Found by codex + pdf_to_csv: {coverage['codex_and_pdf']} ({coverage['codex_and_pdf']/total*100:.1f}%)")
@@ -155,10 +155,10 @@ def print_analysis_report(analysis: Dict):
     print(f"  Found only by codex: {coverage['codex_only']} ({coverage['codex_only']/total*100:.1f}%)")
     print(f"  Found only by pdf_to_csv: {coverage['pdf_only']} ({coverage['pdf_only']/total*100:.1f}%)")
     print(f"  Found only by text_to_csv: {coverage['text_only']} ({coverage['text_only']/total*100:.1f}%)")
-    
-    print(f"\n📋 FIELD COMPLETENESS:")
+
+    print("\n📋 FIELD COMPLETENESS:")
     field_analysis = analysis["field_analysis"]
-    
+
     all_fields = sorted(field_analysis.keys())
     for field in all_fields:
         stats = field_analysis[field]
@@ -166,8 +166,8 @@ def print_analysis_report(analysis: Dict):
         print(f"    Codex: {stats['codex']} rows")
         print(f"    PDF-to-CSV: {stats['pdf_to_csv']} rows")
         print(f"    Text-to-CSV: {stats['text_to_csv']} rows")
-    
-    print(f"\n🔍 SAMPLE COMMON TRANSACTIONS:")
+
+    print("\n🔍 SAMPLE COMMON TRANSACTIONS:")
     if analysis["sample_transactions"]["all_three"]:
         for i, sample in enumerate(analysis["sample_transactions"]["all_three"][:2]):
             print(f"  Sample {i+1}:")
@@ -179,15 +179,15 @@ def print_analysis_report(analysis: Dict):
                   f"Text='{sample['text_to_csv'].get('category', '')}'")
     else:
         print("  No transactions found by all three parsers")
-    
-    print(f"\n📈 PARSER EFFECTIVENESS:")
+
+    print("\n📈 PARSER EFFECTIVENESS:")
     parsers = analysis["parser_coverage"]
     print(f"  Codex: {parsers['codex']} transactions ({parsers['codex']/total*100:.1f}% coverage)")
     print(f"  PDF-to-CSV: {parsers['pdf_to_csv']} transactions ({parsers['pdf_to_csv']/total*100:.1f}% coverage)")
     print(f"  Text-to-CSV: {parsers['text_to_csv']} transactions ({parsers['text_to_csv']/total*100:.1f}% coverage)")
-    
+
     # Recommendations
-    print(f"\n💡 RECOMMENDATIONS:")
+    print("\n💡 RECOMMENDATIONS:")
     best_coverage = max(parsers.values())
     best_parser = [name for name, count in parsers.items() if count == best_coverage][0]
     print(f"  • {best_parser.upper()} has the highest coverage ({best_coverage} transactions)")
@@ -196,29 +196,29 @@ def print_analysis_report(analysis: Dict):
     if coverage['codex_only'] > 0:
         print(f"  • Codex finds {coverage['codex_only']} unique transactions - may have more sophisticated parsing")
     if parsers['pdf_to_csv'] == parsers['text_to_csv']:
-        print(f"  • PDF-to-CSV and Text-to-CSV have identical coverage - PDF extraction may be working correctly")
+        print("  • PDF-to-CSV and Text-to-CSV have identical coverage - PDF extraction may be working correctly")
 
 def main():
     parser = argparse.ArgumentParser(description="Compare outputs from all three parsers")
-    parser.add_argument("--prefix", type=str, required=True, 
+    parser.add_argument("--prefix", type=str, required=True,
                        help="File prefix (e.g., 'Itau_2024-10' for Itau_2024-10.pdf)")
     parser.add_argument("--dir", type=Path, default=Path("test_outputs"),
                        help="Directory containing the CSV outputs")
     parser.add_argument("--output", type=Path, help="Save analysis to JSON file")
-    
+
     args = parser.parse_args()
-    
+
     # Construct file paths
     codex_file = args.dir / f"codex_{args.prefix}.csv"
     pdf_csv_file = args.dir / f"pdf_to_csv_{args.prefix}.csv"
     text_csv_file = args.dir / f"text_to_csv_{args.prefix}.csv"
-    
+
     # Run analysis
     analysis = analyze_parsers(codex_file, pdf_csv_file, text_csv_file)
-    
+
     # Print report
     print_analysis_report(analysis)
-    
+
     # Save to file if requested
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:

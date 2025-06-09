@@ -5,10 +5,10 @@ parser_utils.py – Shared utilities for Itaú statement parsing
 Intended for use by golden_guided_parser.py and other scripts.
 """
 
-import re
 import csv
-from decimal import Decimal, ROUND_HALF_UP
-from typing import List, Dict, Optional
+import re
+from decimal import ROUND_HALF_UP, Decimal
+
 
 def decomma(x: str) -> Decimal:
     """Convert Brazilian number string to Decimal(2) safely."""
@@ -20,7 +20,7 @@ def decomma(x: str) -> Decimal:
     except Exception:
         return Decimal("0.00")
 
-def load_csv(path, delimiter=";") -> List[Dict]:
+def load_csv(path, delimiter=";") -> list[dict]:
     """Load a CSV file into a list of dicts."""
     with open(path, encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
@@ -37,7 +37,7 @@ def fuzzy_match(a: str, b: str) -> float:
     import difflib
     return difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
-def extract_fx_rate(lines: List[str], idx: int, window: int = 3) -> Optional[str]:
+def extract_fx_rate(lines: list[str], idx: int, window: int = 3) -> str | None:
     """Extract FX rate from lines near idx."""
     for offset in range(window):
         i = idx + offset
@@ -53,7 +53,7 @@ def extract_category_and_city(line: str) -> tuple[str, str]:
         parts = line.split(".")
         return parts[0].strip(), parts[-1].strip()
     return "", ""
-def find_best_line(golden_row: Dict, lines: List[str]) -> int:
+def find_best_line(golden_row: dict, lines: list[str]) -> int:
     """Find the best matching line index for a golden row."""
     best_idx, best_score = None, 0.0
     target_date = golden_row.get("date", "")

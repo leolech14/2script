@@ -19,20 +19,20 @@ import csv
 import difflib
 import re
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
 
-def load_golden_csv(path: Path) -> List[Dict]:
+
+def load_golden_csv(path: Path) -> list[dict]:
     """Load golden CSV into a list of dicts."""
     with open(path, encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
         return [dict(row) for row in reader]
 
-def load_txt_lines(path: Path) -> List[str]:
+def load_txt_lines(path: Path) -> list[str]:
     """Load and clean TXT lines."""
     with open(path, encoding="utf-8") as f:
         return [l.strip() for l in f if l.strip()]
 
-def find_best_text_match(golden_row: Dict, lines: List[str]) -> Tuple[Optional[int], float]:
+def find_best_text_match(golden_row: dict, lines: list[str]) -> tuple[int | None, float]:
     """
     For a golden posting, find the best matching line index in the TXT.
     Returns (index, score).
@@ -59,7 +59,7 @@ def find_best_text_match(golden_row: Dict, lines: List[str]) -> Tuple[Optional[i
             best_idx = i
     return best_idx, best_score
 
-def extract_pattern_rule(golden_row: Dict, matched_line: str, lines: List[str]) -> Dict:
+def extract_pattern_rule(golden_row: dict, matched_line: str, lines: list[str]) -> dict:
     """
     Analyze how the golden posting appears in the text.
     Returns a dict describing the pattern/rule.
@@ -76,7 +76,7 @@ def extract_pattern_rule(golden_row: Dict, matched_line: str, lines: List[str]) 
     rule["next_line"] = lines[idx+1] if 0 <= idx < len(lines)-1 else ""
     return rule
 
-def enrich_metadata(row: Dict, matched_line: str, lines: List[str]) -> None:
+def enrich_metadata(row: dict, matched_line: str, lines: list[str]) -> None:
     """
     Fill in additional metadata fields for the CSV row,
     using the matched line and its neighbors.
@@ -97,7 +97,7 @@ def enrich_metadata(row: Dict, matched_line: str, lines: List[str]) -> None:
             row["fx_rate"] = m.group(1).replace(",", ".")
     # Add more enrichment as needed
 
-def write_csv(rows: List[Dict], out_path: Path, schema: List[str]):
+def write_csv(rows: list[dict], out_path: Path, schema: list[str]):
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=schema, delimiter=";")
         writer.writeheader()
@@ -130,7 +130,7 @@ def main():
         rule = extract_pattern_rule(g, matched_line, txt_lines)
         golden_rules.append(rule)
 
-    # 3. Build CSV skeleton and enrich metadata  
+    # 3. Build CSV skeleton and enrich metadata
     schema = list(golden_rows[0].keys())  # Use golden schema exactly
     csv_rows = []
     for (g, matched_line) in matches:

@@ -3,18 +3,18 @@
 # codex.py - Itaú Fatura TXT → CSV + Sanity Check (2025-05-30)
 # Pipeline com comparação automática de métricas PDF vs CSV
 
-import re
-import csv
 import argparse
-import logging
+import csv
 import datetime
-import tracemalloc
-import time
 import hashlib
-from decimal import Decimal, ROUND_HALF_UP
+import logging
+import re
+import time
+import tracemalloc
+from collections import Counter
+from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
-from collections import Counter, defaultdict
-from datetime import datetime, date
 
 __version__ = "0.12.0"
 DATE_FMT_OUT = "%Y-%m-%d"
@@ -79,7 +79,7 @@ def norm_date(date, ry, rm):
 
 def sha1(card, date, desc, valor_brl, installment_tot, categoria_high):
     h = hashlib.sha1()
-    h.update(f"{card}|{date}|{desc}|{valor_brl}|{installment_tot}|{categoria_high}".encode("utf-8"))
+    h.update(f"{card}|{date}|{desc}|{valor_brl}|{installment_tot}|{categoria_high}".encode())
     return h.hexdigest()
 
 def classify(desc, amt):
@@ -234,7 +234,7 @@ def parse_fx_chunk(chunk: list[str]):
 def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
     rows, stats = [], Counter()
     card = "0000"; iof_postings = []
-    
+
     # Use pdfplumber for PDF files
     if path.suffix.lower() == '.pdf':
         import pdfplumber
@@ -243,7 +243,7 @@ def parse_txt(path: Path, ref_y: int, ref_m: int, verbose=False):
             lines = text.splitlines()
     else:
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
-    
+
     stats["lines"] = len(lines)
     skip = 0
     last_date = None
@@ -418,7 +418,7 @@ def main():
         # --- Extract metrics from parsed rows ---
         fx_rows = [r for r in rows_dedup if r["categoria_high"] == "FX"]
         valor_fx = sum(float(r["valor_brl"]) for r in fx_rows if r.get("valor_brl") not in ("", None))
-        
+
         pdf_metrics = {
             "Total da fatura anterior": sum(float(r.get("pagamento_fatura_anterior", 0) or 0) for r in rows_dedup),
             "Pagamentos efetuados": sum(float(r["valor_brl"]) for r in rows_dedup if r["categoria_high"] == "PAGAMENTO"),

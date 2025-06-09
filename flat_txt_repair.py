@@ -5,11 +5,10 @@ Use this ONLY when table extraction fails and you must work with flat text.
 Attempts to pair main posting lines with their category/city lines.
 """
 
-import csv
 import argparse
+import csv
 import re
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
 
 # Patterns for identifying different line types
 PATTERNS = {
@@ -28,24 +27,24 @@ def classify_line(line: str) -> str:
     line = line.strip()
     if not line:
         return 'empty'
-    
+
     for pattern_name, pattern in PATTERNS.items():
         if pattern.search(line):
             return pattern_name
-    
+
     return 'unknown'
 
-def parse_main_posting(line: str) -> Dict[str, str]:
+def parse_main_posting(line: str) -> dict[str, str]:
     """Parse main posting line: date + description + amount"""
     match = PATTERNS['main_posting'].match(line)
     if not match:
         return {}
-    
+
     parts = line.split()
     date = parts[0]
     amount = parts[-1]
     description = ' '.join(parts[1:-1])
-    
+
     return {
         'date': date,
         'description': description,
@@ -55,7 +54,7 @@ def parse_main_posting(line: str) -> Dict[str, str]:
         'original_line': line
     }
 
-def parse_category_city(line: str) -> Tuple[str, str]:
+def parse_category_city(line: str) -> tuple[str, str]:
     """Parse category.city line"""
     if '.' in line:
         parts = line.split('.')
@@ -64,25 +63,25 @@ def parse_category_city(line: str) -> Tuple[str, str]:
         return category, city
     return '', ''
 
-def group_posting_lines(lines: List[str]) -> List[Dict[str, str]]:
+def group_posting_lines(lines: list[str]) -> list[dict[str, str]]:
     """Group lines into complete postings using heuristics"""
     postings = []
     i = 0
-    
+
     while i < len(lines):
         line = lines[i].strip()
         line_type = classify_line(line)
-        
+
         if line_type == 'main_posting':
             # Found main posting line
             posting = parse_main_posting(line)
-            
+
             # Look for corresponding category/city line
             # Check next few lines for category info
             for j in range(i + 1, min(i + 4, len(lines))):
                 next_line = lines[j].strip()
                 next_type = classify_line(next_line)
-                
+
                 if next_type == 'category_city':
                     category, city = parse_category_city(next_line)
                     posting['category'] = category
@@ -91,10 +90,10 @@ def group_posting_lines(lines: List[str]) -> List[Dict[str, str]]:
                 elif next_type == 'main_posting':
                     # Hit another main posting, stop looking
                     break
-            
+
             postings.append(posting)
             i += 1
-            
+
         elif line_type == 'payment':
             # Handle payment line
             match = PATTERNS['payment'].search(line)
@@ -112,7 +111,7 @@ def group_posting_lines(lines: List[str]) -> List[Dict[str, str]]:
                 }
                 postings.append(posting)
             i += 1
-            
+
         elif line_type == 'fx_line':
             # Handle FX posting (simplified)
             parts = line.split()
@@ -130,17 +129,17 @@ def group_posting_lines(lines: List[str]) -> List[Dict[str, str]]:
                 }
                 postings.append(posting)
             i += 1
-            
+
         else:
             i += 1
-    
+
     return postings
 
-def repair_flat_txt(input_path: Path) -> List[Dict[str, str]]:
+def repair_flat_txt(input_path: Path) -> list[dict[str, str]]:
     """Main repair function"""
-    with open(input_path, 'r', encoding='utf-8') as f:
+    with open(input_path, encoding='utf-8') as f:
         lines = f.readlines()
-    
+
     # Clean lines
     cleaned_lines = []
     for line in lines:
@@ -150,22 +149,22 @@ def repair_flat_txt(input_path: Path) -> List[Dict[str, str]]:
             cleaned = re.sub(r'[\ue000-\uf8ff]', '', cleaned)
             cleaned = re.sub(r'\s+', ' ', cleaned)
             cleaned_lines.append(cleaned)
-    
+
     print(f"Loaded {len(cleaned_lines)} non-empty lines")
-    
+
     # Classify lines for debugging
     line_types = {}
     for line in cleaned_lines:
         line_type = classify_line(line)
         line_types[line_type] = line_types.get(line_type, 0) + 1
-    
+
     print("Line classification:")
     for line_type, count in sorted(line_types.items()):
         print(f"  {line_type}: {count}")
-    
+
     # Group into postings
     postings = group_posting_lines(cleaned_lines)
-    
+
     return postings
 
 def main():
@@ -176,18 +175,18 @@ def main():
     parser.add_argument("-o", "--output", type=Path, required=True, help="Output CSV file")
     parser.add_argument("--debug", action="store_true", help="Save debug info")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-    
+
     args = parser.parse_args()
-    
+
     if not args.input.exists():
         print(f"Error: Input file {args.input} not found")
         return 1
-    
+
     print(f"Repairing flat text from {args.input}...")
     postings = repair_flat_txt(args.input)
-    
+
     print(f"Extracted {len(postings)} postings")
-    
+
     # Save main output
     if postings:
         fieldnames = ['date', 'description', 'amount', 'category', 'merchant_city']
@@ -198,7 +197,7 @@ def main():
                 # Only write fields that are in schema
                 row = {k: posting.get(k, '') for k in fieldnames}
                 writer.writerow(row)
-    
+
     # Save debug output if requested
     if args.debug:
         debug_path = args.output.with_suffix('.debug.csv')
@@ -208,14 +207,14 @@ def main():
             writer.writeheader()
             writer.writerows(postings)
         print(f"Debug info saved to {debug_path}")
-    
+
     if args.verbose and postings:
         print("\nSample repaired postings:")
         for i, posting in enumerate(postings[:5], 1):
             print(f"  {i}. {posting['date']} - {posting['description'][:40]}... - {posting['amount']}")
-    
+
     print(f"✅ Repair completed. Saved to {args.output}")
-    
+
     return 0
 
 if __name__ == "__main__":
