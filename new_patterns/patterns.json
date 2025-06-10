@@ -1,0 +1,132 @@
+{
+  "patterns": {
+    "amount_brl": {
+      "regex": "(\\d{1,3}(?:\\.\\d{3})*,\\d{2})",
+      "description": "Brazilian format with thousands",
+      "confidence": 1.0,
+      "examples": [
+        "20.860,60",
+        "7.000,00",
+        "15.326,81",
+        "74,99",
+        "21,29"
+      ]
+    },
+    "installments": {
+      "regex": "(\\d{2}/\\d{2})(?=\\s|$)",
+      "description": "Simple XX/XX installment format",
+      "confidence": 1.0,
+      "examples": [
+        "03/10",
+        "03/06",
+        "03/03",
+        "03/06",
+        "03/03"
+      ]
+    },
+    "international_line2": {
+      "regex": "^(.+?)\\s+(\\d+[,.]\\d{2})\\s+([A-Z]{3})\\s+(\\d+[,.]\\d{2})$",
+      "description": "Flexible international line 2",
+      "confidence": 1.0,
+      "examples": [
+        "SAN FRANCISCO      5,05 USD                 5,05",
+        "SAN FRANCISCO      5,49 USD                 5,49",
+        "SAN FRANCISCO      5,68 USD                 5,68",
+        "SAN FRANCISCO      5,69 USD                 5,69",
+        "SAN FRANCISCO 20,00 USD                    20,00"
+      ]
+    }
+  },
+  "layout": {
+    "dual_column_detected": {
+      "confidence": 0.303772216177004,
+      "recommendation": "Implement column separation logic",
+      "examples": [
+        "                  09/04 PAGAMENTO EFETUADO 7117                       - 8.372,31   10/04   VIA SUL                                                 5,50",
+        "                P Total dos pagamentos                             - 16.744,62     10/04   VIA SUL                                                 5,50",
+        "15/04   PAG*Supermecado                       150,94      18/04     APPLE.COM/BILL                                            54,90"
+      ]
+    }
+  },
+  "alignment": {
+    "card_last4": {
+      "csv_samples": [
+        "9853",
+        "6853",
+        "0000",
+        "9835",
+        "1929"
+      ],
+      "matching_txt_lines": [
+        "                        Cartão          5234.XXXX.XXXX.6853 MASTERCARD BLACK",
+        "                                                    LEONARDO B LECH (final 6853)",
+        "                                                                                     Lançamentos no cartão (final 6853)",
+        "                 LEONARDO B LECH (final 6853)                                        Milano              7,90      EUR             8,95",
+        "          Cartão           5234.XXXX.XXXX.6853 MASTERCARD BLACK"
+      ]
+    },
+    "post_date": {
+      "csv_samples": [
+        "2025-04-10",
+        "2025-03-10",
+        "2025-04-16",
+        "2025-01-11",
+        "2025-06-16"
+      ],
+      "matching_txt_lines": []
+    },
+    "desc_raw": {
+      "csv_samples": [
+        "APPLE.COM/BILL",
+        "FARMACIASAOJOAO 02/04",
+        "LIBRERIA ANTIQUARIA CA",
+        "FARMACIA SAO JOAO 04/04",
+        "BUFFET ROMA TERMINI"
+      ],
+      "matching_txt_lines": [
+        "                 20/03   FARMACIA SAO JOAO 02/06                          65,57      19/04   APPLE.COM/BILL                               999,90",
+        "                 04/04   APPLE.COM/BILL                                   99,90      22/04   FARMACIA SAO JOAO 01/06                      126,73",
+        "                 04/04   APPLE.COM/BILL                                  - 53,28     22/04   IFD*MISO DELIVERY LTDA                        53,00",
+        "                 05/04   PARTICIPACOES                                    21,85      25/04   APPLE.COM/BILL                                27,90",
+        "                 06/04   APPLE.COM/BILL                                   69,90      25/04   APPLE.COM/BILL                                49,90"
+      ]
+    },
+    "amount_brl": {
+      "csv_samples": [
+        "56.12",
+        "74.80",
+        "39.51",
+        "-0.25",
+        "12.74"
+      ],
+      "matching_txt_lines": [
+        "                                                                                                                                                = Total desta fatura                                                   20.860,60",
+        "                        R$ 20.860,60                                                                         10/05/2025                                                          R$29.950,00",
+        "                        Encargos                               R$ 2.150,20             -                                                   Valor solicitado                      R$ 20.860,60              98,30 %",
+        "                                                                                                                                                                                                        R$ 20.860,60",
+        "                                                  1 5/0                         1 R$                  1                             1                                                                               R$ 20.860,60"
+      ]
+    },
+    "merchant_city": {
+      "csv_samples": [
+        "SAO PAULO",
+        "BARUERI",
+        "BIRIGUI",
+        "S o Paulo",
+        "Sao Jose"
+      ],
+      "matching_txt_lines": [
+        "                                                                                            ALIMENTAÇÃO .SAO PAULO",
+        "                        SAÚDE .PASSO FUNDO                                         ~g --------ALIMENTAÇÃO .SAO PAULO",
+        "                                                                                         ALIMENTAÇÃO .SAO PAULO               _",
+        "                     SAÚDE .PASSO FUNDO                      _                               HOBBY .SAO PAULO",
+        "                         HOBBY .SAO PAULO                                                    SAÚDE ."
+      ]
+    }
+  },
+  "recommendations": [
+    "Improve amount extraction with: (\\d{1,3}(?:\\.\\d{3})*,\\d{2})",
+    "Implement dual-column layout separation logic",
+    "Add 3-line international transaction parsing"
+  ]
+}
